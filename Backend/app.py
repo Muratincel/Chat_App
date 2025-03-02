@@ -1,10 +1,11 @@
 from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
-from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS # type: ignore
+from flask_sqlalchemy import SQLAlchemy # type: ignore
 import datetime
 import os
-import pytz
+import pytz # type: ignore
 from datetime import datetime, timezone
+from flask_socketio import SocketIO, emit # type: ignore
 
 
 app = Flask(__name__)
@@ -15,6 +16,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+
+socketio = SocketIO(app, cors_allowed_origins="*")  # Enable WebSockets
 
 # Database Models
 class Message(db.Model):
@@ -33,31 +36,36 @@ FRONTEND_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", 
 def serve_frontend():
     return send_from_directory(FRONTEND_FOLDER, "index.html")
 
-# API Endpoint to send a message
-@app.route('/send_message', methods=['POST'])
-def send_message():
-    data = request.get_json()
-    username = data.get('username')
-    text = data.get('text')
-    
+@socketio.on("send_message")
+def handle_message(data):
+    username = data.get("username")
+    text = data.get("text")
+
     if not username or not text:
-        return jsonify({'error': 'Username and message text are required'}), 400
-    
+        return
+
     message = Message(username=username, text=text)
     db.session.add(message)
     db.session.commit()
-    
-    return jsonify({'message': 'Message sent successfully'})
 
-# API Endpoint to get messages
-@app.route("/get_messages", methods=["GET"])
+    local_tz = pytz.timezone("Europe/Bucharest")
+    utc_time = message.timestamp.replace(tzinfo=pytz.utc)
+    local_time = utc_time.astimezone(local_tz)
+
+    # Emit the message to all connected clients
+    socketio.emit("new_message", {
+        "username": message.username,
+        "text": message.text,
+        "timestamp": local_time.strftime("%Y-%m-%d %H:%M:%S")
+    })
+
+@app.route("/get_messages")
 def get_messages():
     messages = Message.query.all()
     
-    # Convert UTC time to your local timezone (Example: Europe/Istanbul)
     local_tz = pytz.timezone("Europe/Bucharest")
-    
     formatted_messages = []
+
     for msg in messages:
         utc_time = msg.timestamp.replace(tzinfo=pytz.utc)
         local_time = utc_time.astimezone(local_tz)
@@ -70,4 +78,4 @@ def get_messages():
     return jsonify(formatted_messages)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    socketio.run(app, debug=True)
