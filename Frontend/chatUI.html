@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Chat App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .chat-container {
+            width: 400px;
+            height: 600px;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .chat-header {
+            background: #007bff;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .message {
+            background: #007bff;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            max-width: 70%;
+        }
+        .message.sent {
+            align-self: flex-end;
+            background: #28a745;
+        }
+        .message.received {
+            align-self: flex-start;
+            background: #6c757d;
+        }
+        .timestamp {
+            font-size: 10px;
+            color: #fff;
+            margin-top: 5px;
+            text-align: right;
+        }
+        .chat-input {
+            display: flex;
+            border-top: 1px solid #ccc;
+            padding: 10px;
+            background: white;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            outline: none;
+        }
+        .chat-input button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            margin-left: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">Chat App</div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="Type a message..." onkeydown="handleKeyPress(event)">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        function sendMessage() {
+            let input = document.getElementById("messageInput");
+            let messageText = input.value.trim();
+            if (messageText === "") return;
+
+            let messageContainer = document.getElementById("chatMessages");
+            let messageElement = document.createElement("div");
+            messageElement.classList.add("message", "sent");
+            messageElement.textContent = messageText;
+            
+            let timestamp = document.createElement("div");
+            timestamp.classList.add("timestamp");
+            timestamp.textContent = new Date().toLocaleTimeString();
+            messageElement.appendChild(timestamp);
+            
+            messageContainer.appendChild(messageElement);
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+            input.value = "";
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        }
+    </script>
+</body>
+</html>
